@@ -1,0 +1,100 @@
+﻿@page "/notifications"
+@using System.Security.Claims
+@using System.Text.Json
+@using Microsoft.AspNetCore.SignalR.Client
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+@inject ILocalStorageService _localStorage
+
+@if (string.IsNullOrEmpty(name) == false)
+{
+	<p class="text-danger">@name</p>
+}
+<hr />
+<InputText @bind-Value=sendMessage DisplayName="Gửi thông báo" />
+<button class="btn btn-success" @onclick=SendNotification>Send</button>
+
+<hr />
+@if (Messages != null)
+{
+	foreach (var mes in Messages)
+	{
+		<p class="text-danger">@mes</p>
+	}
+}
+
+@code {
+
+	List<string> Messages;
+	string sendMessage = string.Empty;
+
+	HubConnection hubConnection;
+	string token = string.Empty;
+	string name = string.Empty;
+	protected async override Task OnAfterRenderAsync(bool firstRender)
+	{
+		await Task.Delay(100);
+		Messages = new();
+		token = (await _localStorage.GetItemAsStringAsync("token")).Replace("\"", "");
+		var claims = ParseClaimsFromJwt(token);
+		var nameClaim = claims.FirstOrDefault(c => c.Type == "name" || c.Type == ClaimTypes.Name);
+		name = nameClaim.Value;
+		StateHasChanged();
+
+		hubConnection = new HubConnectionBuilder()
+					.WithUrl("https://localhost:7000/notificationHub", options =>
+					{
+						options.AccessTokenProvider = () => Task.FromResult<string?>(token);
+					})
+					.WithAutomaticReconnect()
+					.Build();
+
+		hubConnection.On<string>("ReceiveNotification", async (message) =>
+			{
+				Messages.Add(message);
+				StateHasChanged();
+			});
+
+		await hubConnection.StartAsync();
+	}
+
+	async Task SendNotification()
+	{
+		if (hubConnection?.ConnectionId !=null)
+		{
+			await hubConnection.SendAsync("SendNotificationToAll", sendMessage);
+			StateHasChanged();
+		}
+	}
+
+	public async ValueTask DisposeAsync()
+	{
+		if (hubConnection is not null)
+		{
+			await hubConnection.DisposeAsync();
+		}
+	}
+
+
+
+
+	private IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
+	{
+		var payload = jwt.Split('.')[1];
+		var jsonBytes = ParseBase64WithoutPadding(payload);
+		var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
+		return keyValuePairs.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString()));
+	}
+
+	private byte[] ParseBase64WithoutPadding(string base64)
+	{
+		switch (base64.Length % 4)
+		{
+			case 2: base64 += "=="; break;
+			case 3: base64 += "="; break;
+		}
+		return Convert.FromBase64String(base64);
+	}
+}
+

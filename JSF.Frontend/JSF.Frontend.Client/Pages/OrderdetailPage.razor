@@ -1,0 +1,8 @@
+﻿@page "/orderdetail/{OrderId}"
+
+<h5>Thanh toán đơn hàng thành công đơn hàng @OrderId</h5>
+
+@code {
+	[Parameter]
+	public string OrderId { get; set; }
+}

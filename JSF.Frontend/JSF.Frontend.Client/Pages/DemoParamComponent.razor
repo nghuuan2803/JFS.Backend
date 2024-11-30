@@ -1,0 +1,26 @@
+﻿
+<div class="bg-info">
+	this is parameter: @myParam
+</div>
+<hr />
+<button @onclick="OnCallbackClick">Bấm từ component con</button>
+<button @onclick="HanhHaThangCon">Hành hạ thằng con</button>
+
+@code {
+	[Parameter]
+	public EventCallback<int> OnClick { get; set; } = new();
+
+	[Parameter] //1 chiều - đem con bỏ chợ
+	public int myParam { get; set; }
+
+	Random Random = new();
+
+	void OnCallbackClick()
+	{
+		int i = Random.Next(1, 10);
+		OnClick.InvokeAsync(i);
+	}
+	void HanhHaThangCon(){
+		myParam -= 100;
+	}
+}

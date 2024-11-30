@@ -1,0 +1,18 @@
+﻿@page "/products"
+@rendermode InteractiveAuto
+
+@inject NavigationManager _navigation
+
+@foreach (var item in Data)
+{
+	<button @onclick="()=>Select(item)">@item</button>
+}
+
+@code {
+	public List<string> Data { get; set; } = new() { "Sasimi", "ShuShi", "Ramen", "Mochi" };
+
+	void Select(string item)
+	{
+		_navigation.NavigateTo($"order/{item}");
+	}
+}

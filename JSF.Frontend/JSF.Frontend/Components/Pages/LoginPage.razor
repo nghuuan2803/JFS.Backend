@@ -1,0 +1,40 @@
+﻿@page "/login"
+@using JSF.Frontend.DTO
+@rendermode InteractiveServer
+
+
+@inject HttpClient _client
+@inject ILocalStorageService _localStorage
+@inject NavigationManager _navigation
+
+@if (!string.IsNullOrEmpty(error))
+{
+	<p class="text-danger">@error</p>
+}
+
+<InputText @bind-Value=username DisplayName="Tên đăng nhập" placeholder="tên đăng nhập..." />
+<InputText @bind-Value=password DisplayName="Mật khẩu" type="password" placeholder="mật khẩu..." />
+<button class="btn btn-outline-danger" @onclick=Login>Login</button>
+@code {
+	string error = string.Empty;
+
+	string username = string.Empty;
+	string password = string.Empty;
+
+
+	string baseUrl = "https://localhost:7000/auth/";
+	async Task Login()
+	{
+		var response = await _client.PostAsJsonAsync(baseUrl + "login", new { userName = username, password = password });
+		var data = await response.Content.ReadFromJsonAsync<LoginResponse>(); //fetch api
+		if (response.IsSuccessStatusCode)
+		{
+			_localStorage.SetItemAsStringAsync("token", data.Token); //lưu token vào localstorage
+			_navigation.NavigateTo("notifications");
+		}
+		else
+		{
+			error = data.ErrorMessage;
+		}
+	}
+}

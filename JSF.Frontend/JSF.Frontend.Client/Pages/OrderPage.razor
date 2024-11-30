@@ -1,0 +1,44 @@
+﻿@page "/order/{Item}"
+@rendermode InteractiveAuto
+
+@inject HttpClient _client
+@inject NavigationManager _navigation
+
+<h3>@Item</h3>
+<button class="btn btn-success" @onclick="PaymentExcute">Thanh toán</button>
+
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+<DemoParamComponent OnClick="Increment" myParam="123" />
+
+<p>tương tác từ component con: @currentCount</p>
+
+@code {
+	private int currentCount = 0;
+
+	private void IncrementCount()
+	{
+		currentCount++;
+	}
+	private void Increment(int i)
+	{
+		currentCount += i;
+	}
+}
+
+@code {
+	[Parameter]
+	public string Item { get; set; }
+
+	string baseUrl = "https://localhost:7000/payment";
+	async Task PaymentExcute()
+	{
+		var response = await _client.PostAsJsonAsync(baseUrl + "/test-momo", Item);
+		var payUrl = await response.Content.ReadAsStringAsync();
+
+		_navigation.NavigateTo(payUrl, forceLoad: true);
+	}
+}

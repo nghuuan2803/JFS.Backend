@@ -1,0 +1,48 @@
+﻿@page "/counter"
+@rendermode InteractiveAuto
+
+@inject NavigationManager _navigation
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+
+<button class="btn btn-success" @onclick="PaymentExcute">Thanh toán</button>
+
+
+@code {
+	private int currentCount = 0;
+
+	private void IncrementCount()
+	{
+		currentCount++;
+	}
+}
+
+@code {
+
+
+	[Parameter]
+	public string Item { get; set; } = "Shushi";
+
+	public HttpClient _client { get; set; } = new HttpClient();
+
+	string baseUrl = "https://localhost:7000/Payment/";
+	async Task PaymentExcute()
+	{
+		var response = await _client.PostAsJsonAsync(baseUrl + "getpayment", Item);
+		if (response.IsSuccessStatusCode)
+		{
+			var payUrl = await response.Content.ReadAsStringAsync();
+			_navigation.NavigateTo(payUrl, forceLoad: true);
+		}
+	}
+
+
+}
+
